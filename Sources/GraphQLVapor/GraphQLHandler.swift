@@ -8,14 +8,28 @@ public struct GraphQLHandler: Sendable {
 
     public struct Config: Sendable {
         public let allowGet: Bool
+        public let ide: IDE
         public let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
 
         public init(
             allowGet: Bool = true,
-            additionalValidationRules: [@Sendable (ValidationContext) -> Visitor] = []
+            ide: IDE = .graphiql,
+            additionalValidationRules: [@Sendable (ValidationContext) -> Visitor] = [],
         ) {
             self.allowGet = allowGet
             self.additionalValidationRules = additionalValidationRules
+            self.ide = ide
+        }
+
+        public struct IDE: Sendable {
+            public static var graphiql: Self { .init(type: .graphiql) }
+            public static var none: Self { .init(type: .none) }
+
+            let type: IDEType
+            enum IDEType {
+                case graphiql
+                case none
+            }
         }
     }
 
@@ -44,9 +58,15 @@ public struct GraphQLHandler: Sendable {
                     throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
                 }
 
-                guard let query = req.url.query, query.contains("query") else {
+                if req.url.query == nil || !(req.url.query?.contains("query") ?? true) {
                     // Get requests without a `query` parameter are considered to be IDE requests
-                    return try await GraphiQLHandler.respond(to: req)
+                    switch config.ide.type {
+                        case .graphiql:
+                            return try await GraphiQLHandler.respond(to: req)
+                        case .none:
+                            // Let this get caught by the graphQLRequest decoding
+                            break
+                    }
                 }
 
                 // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
