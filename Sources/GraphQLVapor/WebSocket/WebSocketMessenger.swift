@@ -14,8 +14,7 @@ class WebSocketMessenger: GraphQLTransportWS.Messenger, GraphQLWS.Messenger {
             // out of scope while the websocket is still alive
             do {
                 try await self.onReceive(message)
-            }
-            catch {
+            } catch {
                 try? await self.error("\(error)", code: 4400)
             }
         }
@@ -34,7 +33,7 @@ class WebSocketMessenger: GraphQLTransportWS.Messenger, GraphQLWS.Messenger {
     }
 
     func onReceive(callback: @escaping (String) async throws -> Void) {
-        self.onReceive = callback
+        onReceive = callback
     }
 
     func error(_ message: String, code: Int) async throws {

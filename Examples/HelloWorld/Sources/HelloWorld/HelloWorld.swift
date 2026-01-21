@@ -14,7 +14,7 @@ struct HelloWorld {
                         resolve: { _, _, _, _ in
                             "World"
                         }
-                    )
+                    ),
                 ]
             )
         )

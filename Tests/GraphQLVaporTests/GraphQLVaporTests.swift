@@ -1,9 +1,9 @@
-import Testing
-import VaporTesting
 import GraphQL
 import GraphQLTransportWS
-import GraphQLWS
 @testable import GraphQLVapor
+import GraphQLWS
+import Testing
+import VaporTesting
 
 @Suite("GraphQLVapor Tests")
 struct GraphQLVaporTests {
@@ -18,7 +18,7 @@ struct GraphQLVaporTests {
                             resolve: { _, _, _, _ in
                                 "World"
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -50,7 +50,7 @@ struct GraphQLVaporTests {
                         "greet": GraphQLField(
                             type: GraphQLString,
                             args: [
-                                "name": GraphQLArgument(type: GraphQLString)
+                                "name": GraphQLArgument(type: GraphQLString),
                             ],
                             resolve: { _, args, _, _ in
                                 guard let name = args["name"].string else {
@@ -58,7 +58,7 @@ struct GraphQLVaporTests {
                                 }
                                 return "Hello, \(name)"
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -104,7 +104,7 @@ struct GraphQLVaporTests {
                                 }
                                 return ctx.message
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -138,7 +138,7 @@ struct GraphQLVaporTests {
                             resolve: { _, _, _, _ in
                                 "World"
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -173,7 +173,7 @@ struct GraphQLVaporTests {
                             resolve: { _, _, _, _ in
                                 throw GraphQLError(message: "Something went wrong")
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -207,7 +207,7 @@ struct GraphQLVaporTests {
                             resolve: { _, _, _, _ in
                                 "GET works"
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -239,7 +239,7 @@ struct GraphQLVaporTests {
                             resolve: { _, _, _, _ in
                                 "World"
                             }
-                        )
+                        ),
                     ]
                 )
             )
@@ -266,12 +266,12 @@ struct GraphQLVaporTests {
                         "hello": GraphQLField(
                             type: GraphQLString,
                             resolve: { source, _, _, _ in
-                                return source as! String
+                                source as! String
                             },
-                            subscribe: { _, _, context, _ in
-                                return await pubsub.subscribe()
-                            },
-                        )
+                            subscribe: { _, _, _, _ in
+                                await pubsub.subscribe()
+                            }
+                        ),
                     ]
                 )
             )
@@ -288,7 +288,7 @@ struct GraphQLVaporTests {
             try await WebSocket.connect(
                 to: "ws://localhost:\(port)/graphql",
                 headers: ["Connection": "Upgrade"],
-                on: MultiThreadedEventLoopGroup(numberOfThreads: 1),
+                on: MultiThreadedEventLoopGroup(numberOfThreads: 1)
             ) { websocket in
                 let decoder = JSONDecoder()
                 websocket.onText { websocket, message in
@@ -297,14 +297,14 @@ struct GraphQLVaporTests {
                         let response = try #require(message.data(using: .utf8))
                         if let _ = try? decoder.decode(GraphQLTransportWS.ConnectionAckResponse.self, from: response) {
                             try await websocket.send(#"""
-                            {
-                                "type": "subscribe",
-                                "payload": {
-                                    "query": "subscription { hello }"
-                                },
-                                "id": "1"
-                            }
-                            """#
+                                {
+                                    "type": "subscribe",
+                                    "payload": {
+                                        "query": "subscription { hello }"
+                                    },
+                                    "id": "1"
+                                }
+                                """#
                             )
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
@@ -349,12 +349,12 @@ struct GraphQLVaporTests {
                         "hello": GraphQLField(
                             type: GraphQLString,
                             resolve: { source, _, _, _ in
-                                return source as! String
+                                source as! String
                             },
-                            subscribe: { _, _, context, _ in
-                                return await pubsub.subscribe()
-                            },
-                        )
+                            subscribe: { _, _, _, _ in
+                                await pubsub.subscribe()
+                            }
+                        ),
                     ]
                 )
             )
@@ -372,9 +372,9 @@ struct GraphQLVaporTests {
                 to: "ws://localhost:\(port)/graphql",
                 headers: [
                     "Connection": "Upgrade",
-                    "Sec-WebSocket-Protocol": "graphql-ws"
+                    "Sec-WebSocket-Protocol": "graphql-ws",
                 ],
-                on: MultiThreadedEventLoopGroup(numberOfThreads: 1),
+                on: MultiThreadedEventLoopGroup(numberOfThreads: 1)
             ) { websocket in
                 let decoder = JSONDecoder()
                 websocket.onText { websocket, message in
@@ -383,14 +383,14 @@ struct GraphQLVaporTests {
                         let response = try #require(message.data(using: .utf8))
                         if let _ = try? decoder.decode(GraphQLWS.ConnectionAckResponse.self, from: response) {
                             try await websocket.send(#"""
-                            {
-                                "type": "start",
-                                "payload": {
-                                    "query": "subscription { hello }"
-                                },
-                                "id": "1"
-                            }
-                            """#
+                                {
+                                    "type": "start",
+                                    "payload": {
+                                        "query": "subscription { hello }"
+                                    },
+                                    "id": "1"
+                                }
+                                """#
                             )
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))

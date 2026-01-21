@@ -1,6 +1,6 @@
 import GraphQL
-import class GraphQLTransportWS.Server
 import struct GraphQLTransportWS.EmptyInitPayload
+import class GraphQLTransportWS.Server
 import class GraphQLWS.Server
 import Vapor
 
@@ -38,54 +38,54 @@ extension GraphQLHandler {
             onUpgrade: { websocket in
                 let messenger = WebSocketMessenger(websocket: websocket)
                 switch subProtocol {
-                    case .graphqlTransportWs:
-                        // https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
-                        let server = GraphQLTransportWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
-                            messenger: messenger,
-                            onExecute: { graphQLRequest in
-                                try await graphql(
-                                    schema: schema,
-                                    request: graphQLRequest.query,
-                                    context: context,
-                                    variableValues: graphQLRequest.variables,
-                                    operationName: graphQLRequest.operationName
-                                )
-                            },
-                            onSubscribe: { graphQLRequest in
-                                try await graphqlSubscribe(
-                                    schema: schema,
-                                    request: graphQLRequest.query,
-                                    context: context,
-                                    variableValues: graphQLRequest.variables,
-                                    operationName: graphQLRequest.operationName
-                                ).get()
-                            }
-                        )
-                        server.auth(onWebsocketInit)
-                    case .graphqlWs:
-                        // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
-                        let server = GraphQLWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
-                            messenger: messenger,
-                            onExecute: { graphQLRequest in
-                                try await graphql(
-                                    schema: schema,
-                                    request: graphQLRequest.query,
-                                    context: context,
-                                    variableValues: graphQLRequest.variables,
-                                    operationName: graphQLRequest.operationName
-                                )
-                            },
-                            onSubscribe: { graphQLRequest in
-                                try await graphqlSubscribe(
-                                    schema: schema,
-                                    request: graphQLRequest.query,
-                                    context: context,
-                                    variableValues: graphQLRequest.variables,
-                                    operationName: graphQLRequest.operationName
-                                ).get()
-                            }
-                        )
-                        server.auth(onWebsocketInit)
+                case .graphqlTransportWs:
+                    // https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
+                    let server = GraphQLTransportWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
+                        messenger: messenger,
+                        onExecute: { graphQLRequest in
+                            try await graphql(
+                                schema: schema,
+                                request: graphQLRequest.query,
+                                context: context,
+                                variableValues: graphQLRequest.variables,
+                                operationName: graphQLRequest.operationName
+                            )
+                        },
+                        onSubscribe: { graphQLRequest in
+                            try await graphqlSubscribe(
+                                schema: schema,
+                                request: graphQLRequest.query,
+                                context: context,
+                                variableValues: graphQLRequest.variables,
+                                operationName: graphQLRequest.operationName
+                            ).get()
+                        }
+                    )
+                    server.auth(onWebsocketInit)
+                case .graphqlWs:
+                    // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
+                    let server = GraphQLWS.Server<WebSocketInit, AsyncThrowingStream<GraphQLResult, Error>>(
+                        messenger: messenger,
+                        onExecute: { graphQLRequest in
+                            try await graphql(
+                                schema: schema,
+                                request: graphQLRequest.query,
+                                context: context,
+                                variableValues: graphQLRequest.variables,
+                                operationName: graphQLRequest.operationName
+                            )
+                        },
+                        onSubscribe: { graphQLRequest in
+                            try await graphqlSubscribe(
+                                schema: schema,
+                                request: graphQLRequest.query,
+                                context: context,
+                                variableValues: graphQLRequest.variables,
+                                operationName: graphQLRequest.operationName
+                            ).get()
+                        }
+                    )
+                    server.auth(onWebsocketInit)
                 }
             }
         )
