@@ -23,14 +23,36 @@ public extension RoutesBuilder {
         config: GraphQLConfig<WebSocketInit> = GraphQLConfig<EmptyWebsocketInit>(),
         computeContext: @Sendable @escaping (Request) async throws -> Context
     ) {
-        let graphqlHandler = GraphQLHandler<Context, WebSocketInit>(schema: schema, config: config)
-        get(path) { req in
-            let context = try await computeContext(req)
-            return try await graphqlHandler.handle(req, context: context)
+        ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
+        ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
+
+        // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#request
+        let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, config: config, computeContext: computeContext)
+        get(path) { request in
+            // WebSocket handling
+            if request.headers.connection?.value.lowercased() == "upgrade" {
+                return try await handler.handleWebSocket(request: request)
+            }
+
+            // Get requests without a `query` parameter are considered to be IDE requests
+            if request.url.query == nil || !(request.url.query?.contains("query") ?? true) {
+                switch config.ide.type {
+                case .graphiql:
+                    return try await GraphiQLHandler.respond(url: request.url.string, subscriptionUrl: request.url.string)
+                case .none:
+                    // Let this get caught by the graphQLRequest decoding
+                    break
+                }
+            }
+
+            // Normal GET request handling
+            guard config.allowGet else {
+                throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
+            }
+            return try await handler.handleGet(request: request)
         }
-        post(path) { req in
-            let context = try await computeContext(req)
-            return try await graphqlHandler.handle(req, context: context)
+        post(path) { request in
+            try await handler.handlePost(request: request)
         }
     }
 }

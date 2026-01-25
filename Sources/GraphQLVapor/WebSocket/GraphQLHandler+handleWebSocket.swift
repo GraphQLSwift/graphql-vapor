@@ -6,12 +6,11 @@ import Vapor
 
 extension GraphQLHandler {
     func handleWebSocket(
-        _ req: Request,
-        context: Context
+        request: Request
     ) async throws -> Response {
         let res = Response(status: .switchingProtocols)
         var subProtocol: WebSocketSubProtocol?
-        let requestedSubProtocols = req.headers["Sec-WebSocket-Protocol"]
+        let requestedSubProtocols = request.headers["Sec-WebSocket-Protocol"]
         if requestedSubProtocols.isEmpty {
             // Default
             subProtocol = .graphqlTransportWs
@@ -30,10 +29,11 @@ extension GraphQLHandler {
         }
         res.headers.add(name: "Sec-WebSocket-Protocol", value: subProtocol.rawValue)
 
+        let context = try await computeContext(request)
         res.upgrader = WebSocketUpgrader(
             maxFrameSize: .default,
             shouldUpgrade: {
-                req.eventLoop.makeSucceededFuture([:])
+                request.eventLoop.makeSucceededFuture([:])
             },
             onUpgrade: { websocket in
                 let messenger = WebSocketMessenger(websocket: websocket)

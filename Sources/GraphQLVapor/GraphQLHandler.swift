@@ -7,76 +7,65 @@ struct GraphQLHandler<
 >: Sendable {
     let schema: GraphQLSchema
     let config: GraphQLConfig<WebSocketInit>
+    let computeContext: @Sendable (Request) async throws -> Context
 
     init(
         schema: GraphQLSchema,
-        config: GraphQLConfig<WebSocketInit>
+        config: GraphQLConfig<WebSocketInit>,
+        computeContext: @Sendable @escaping (Request) async throws -> Context
     ) {
         self.schema = schema
         self.config = config
-
-        ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
-        ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
+        self.computeContext = computeContext
     }
 
-    func handle(
-        _ req: Request,
-        context: Context
-    ) async throws -> Response {
-        // Support both GET and POST requests
-        let graphQLRequest: GraphQLRequest
+    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
+    func handleGet(request: Request) async throws -> Response {
+        let graphQLRequest = try request.query.decode(GraphQLRequest.self)
         let operationType: OperationType
-        switch req.method {
-        case .GET:
-            // WebSocket handling
-            if req.headers.connection?.value.lowercased() == "upgrade" {
-                return try await handleWebSocket(req, context: context)
-            }
-
-            // Get requests without a `query` parameter are considered to be IDE requests
-            if req.url.query == nil || !(req.url.query?.contains("query") ?? true) {
-                switch config.ide.type {
-                case .graphiql:
-                    return try await GraphiQLHandler.respond(url: req.url.string, subscriptionUrl: req.url.string)
-                case .none:
-                    // Let this get caught by the graphQLRequest decoding
-                    break
-                }
-            }
-
-            // Normal GET request handling
-            guard config.allowGet else {
-                throw Abort(.methodNotAllowed, reason: "GET requests are disallowed")
-            }
-            // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
-            graphQLRequest = try req.query.decode(GraphQLRequest.self)
-            do {
-                operationType = try graphQLRequest.operationType()
-            } catch {
-                // Indicates a request parsing error
-                throw Abort(.badRequest, reason: error.localizedDescription)
-            }
-            guard operationType != .mutation else {
-                throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
-            }
-        case .POST:
-            // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#post
-            guard req.headers.contentType != nil else {
-                throw Abort(.unsupportedMediaType, reason: "Missing `Content-Type` header")
-            }
-            graphQLRequest = try req.content.decode(GraphQLRequest.self)
-            do {
-                operationType = try graphQLRequest.operationType()
-            } catch {
-                // Indicates a request parsing error
-                throw Abort(.badRequest, reason: error.localizedDescription)
-            }
-        default:
-            throw Abort(.methodNotAllowed, reason: "Invalid method: \(req.method)")
+        do {
+            operationType = try graphQLRequest.operationType()
+        } catch {
+            // Indicates a request parsing error
+            throw Abort(.badRequest, reason: error.localizedDescription)
         }
+        guard operationType != .mutation else {
+            throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
+        }
+        let context = try await computeContext(request)
+        let result = try await Self.execute(
+            graphQLRequest: graphQLRequest,
+            on: schema,
+            context: context,
+            additionalValidationRules: config.additionalValidationRules
+        )
+        return try Self.encodeResponse(clientMediaTypes: request.headers.accept.mediaTypes, result: result)
+    }
 
+    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#post
+    func handlePost(request: Request) async throws -> Response {
+        guard request.headers.contentType != nil else {
+            throw Abort(.unsupportedMediaType, reason: "Missing `Content-Type` header")
+        }
+        let graphQLRequest = try request.content.decode(GraphQLRequest.self)
+        let context = try await computeContext(request)
+        let result = try await Self.execute(
+            graphQLRequest: graphQLRequest,
+            on: schema,
+            context: context,
+            additionalValidationRules: config.additionalValidationRules
+        )
+        return try Self.encodeResponse(clientMediaTypes: request.headers.accept.mediaTypes, result: result)
+    }
+
+    private static func execute(
+        graphQLRequest: GraphQLRequest,
+        on schema: GraphQLSchema,
+        context: Context,
+        additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
+    ) async throws -> GraphQLResult {
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#validation
-        let validationRules = GraphQL.specifiedRules + config.additionalValidationRules
+        let validationRules = GraphQL.specifiedRules + additionalValidationRules
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#execution
         let result: GraphQLResult
@@ -93,12 +82,15 @@ struct GraphQLHandler<
             // This indicates a request parsing error
             throw Abort(.badRequest, reason: error.localizedDescription)
         }
+        return result
+    }
 
-        // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
+    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
+    private static func encodeResponse(clientMediaTypes: [HTTPMediaType], result: GraphQLResult) throws -> Response {
         let response = Response()
         var encoded = false
-        for mediaType in req.headers.accept.mediaTypes {
-            // Try to encode by the accepted headers, in order
+        for mediaType in clientMediaTypes {
+            // Try to respond in the best media type, in order
             do {
                 try response.content.encode(result, as: mediaType)
                 encoded = true
