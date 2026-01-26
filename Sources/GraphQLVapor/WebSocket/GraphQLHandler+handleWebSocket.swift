@@ -8,7 +8,6 @@ extension GraphQLHandler {
     func handleWebSocket(
         request: Request
     ) async throws -> Response {
-        let res = Response(status: .switchingProtocols)
         var subProtocol: WebSocketSubProtocol?
         let requestedSubProtocols = request.headers["Sec-WebSocket-Protocol"]
         if requestedSubProtocols.isEmpty {
@@ -27,13 +26,15 @@ extension GraphQLHandler {
             // If they provided options but none matched, fail
             throw Abort(.badRequest, reason: "Unable to negotiate subprotocol. \(WebSocketSubProtocol.allCases) are supported.")
         }
-        res.headers.add(name: "Sec-WebSocket-Protocol", value: subProtocol.rawValue)
 
         let context = try await computeContext(request)
-        res.upgrader = WebSocketUpgrader(
+        let response = Response(status: .switchingProtocols)
+        response.upgrader = WebSocketUpgrader(
             maxFrameSize: .default,
             shouldUpgrade: {
-                request.eventLoop.makeSucceededFuture([:])
+                request.eventLoop.makeFutureWithTask {
+                    ["Sec-WebSocket-Protocol": subProtocol.rawValue]
+                }
             },
             onUpgrade: { websocket in
                 let messenger = WebSocketMessenger(websocket: websocket)
@@ -89,6 +90,6 @@ extension GraphQLHandler {
                 }
             }
         )
-        return res
+        return response
     }
 }
