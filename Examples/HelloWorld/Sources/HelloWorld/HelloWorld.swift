@@ -20,9 +20,33 @@ struct HelloWorld {
                         }
                     ),
                 ]
+            ),
+            subscription: GraphQLObjectType(
+                name: "Subscription",
+                fields: [
+                    "hello": GraphQLField(
+                        type: GraphQLString,
+                        description: "Emits `world` every 3 seconds",
+                        resolve: { eventResult, _, _, _ in
+                            eventResult
+                        },
+                        subscribe: { _, _, anyContext, _ in
+                            let context = anyContext as! GraphQLContext
+                            return AsyncThrowingStream<String, Error> { continuation in
+                                context.subscriptionTask = Task {
+                                    for i in 0 ..< 10000 {
+                                        try await Task.sleep(for: .seconds(3))
+                                        try Task.checkCancellation()
+                                        continuation.yield("World for the \(i) time")
+                                    }
+                                }
+                            }
+                        }
+                    ),
+                ]
             )
         )
-        app.graphql(schema: schema) { _ in
+        app.graphql(schema: schema, config: .init(subscriptionProtocols: [.websocket])) { _ in
             GraphQLContext()
         }
 
@@ -36,5 +60,11 @@ struct HelloWorld {
         try await app.asyncShutdown()
     }
 
-    struct GraphQLContext: Sendable {}
+    class GraphQLContext: @unchecked Sendable {
+        var subscriptionTask: Task<Void, Error>?
+
+        deinit {
+            subscriptionTask?.cancel()
+        }
+    }
 }
