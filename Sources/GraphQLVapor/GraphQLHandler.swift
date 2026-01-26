@@ -84,26 +84,42 @@ struct GraphQLHandler<
 
     // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
     private func encodeResponse(result: GraphQLResult, headers: HTTPHeaders) throws -> Response {
+        if !config.allowMissingAcceptHeader, headers.accept.isEmpty {
+            throw Abort(.notAcceptable, reason: "An `Accept` header must be provided")
+        }
+
         let response = Response()
-        var encoded = false
+
+        // Try to respond with the best matching media type, in order
         for mediaType in headers.accept.mediaTypes {
-            // Try to respond in the best media type, in order
             do {
                 try response.content.encode(result, as: mediaType)
-                encoded = true
-                break
+                return response
             } catch {
                 continue
             }
         }
-        if !encoded {
-            if config.allowMissingAcceptHeader {
-                // Use default of `application/graphql-response+json`
-                try response.content.encode(result)
-            } else {
-                throw Abort(.notAcceptable, reason: "An `Accept` header must be provided")
+
+        // If no exact matches, look for any matching wildcards
+        let acceptableMediaSet = HTTPMediaTypeSet(mediaTypes: headers.accept.mediaTypes)
+        for mediaType: HTTPMediaType in [.jsonGraphQL, .json] {
+            if acceptableMediaSet.contains(mediaType) {
+                do {
+                    try response.content.encode(result, as: mediaType)
+                    return response
+                } catch {
+                    continue
+                }
             }
         }
-        return response
+
+        // Use the default if configured to do so
+        if config.allowMissingAcceptHeader {
+            try response.content.encode(result, as: .jsonGraphQL)
+            return response
+        }
+
+        // Fail
+        throw Abort(.notAcceptable)
     }
 }
