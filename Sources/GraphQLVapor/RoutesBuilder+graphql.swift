@@ -4,10 +4,13 @@ import Vapor
 public extension RoutesBuilder {
     /// Registers graphql routes that respond using the provided schema.
     ///
-    /// The resulting routes adhere to the [GraphQL over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md),
-    /// and support the [`graphql-transport-ws`](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
+    /// The resulting routes adhere to the [GraphQL over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md).
+    /// The configured IDE is available by making a `GET` request to the path with no query parameter.
+    ///
+    /// If enabled, WebSocket requests to the path are accepted and support the
+    /// [`graphql-transport-ws`](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
     /// and [`graphql-ws`](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
-    /// websocket subprotocols.
+    /// subprotocols.
     ///
     /// - Parameters:
     ///   - path: The route that should respond to GraphQL requests. Both `GET` and `POST` routes are registered.

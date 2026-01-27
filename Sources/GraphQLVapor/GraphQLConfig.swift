@@ -1,5 +1,6 @@
 import GraphQL
 
+/// Configuration options for GraphQLVapor
 public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Sendable {
     let allowGet: Bool
     let allowMissingAcceptHeader: Bool
@@ -8,11 +9,12 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
     let websocket: WebSocket
     let additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
 
-    /// Configuration for GraphQL responses
+    /// Configuration options for GraphQLVapor
     /// - Parameters:
     ///   - allowGet: Whether to allow GraphQL queries via `GET` requests.
     ///   - allowMissingAcceptHeader: Whether to allow clients to omit "Accept" headers and default to `application/graphql-response+json` encoded responses.
     ///   - ide: The IDE to expose
+    ///   - subscriptionProtocols: Protocols used to support GraphQL subscription requests
     ///   - websocket: WebSocket-specific configuration
     ///   - additionalValidationRules: Additional validation rules to apply to requests. The default GraphQL validation rules are always applied.
     public init(
@@ -68,7 +70,8 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
         let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
 
         /// GraphQL over WebSocket configuration
-        /// - Parameter onWebsocketInit: A custom callback run during `connection_init` resolution that allows authorization using the `payload`.
+        /// - Parameter onWebsocketInit: A custom callback run during `connection_init` resolution that allows
+        /// authorization using the `payload` field of the `connection_init` message.
         /// Throw from this closure to indicate that authorization has failed.
         public init(
             onWebsocketInit: @Sendable @escaping (WebSocketInit) async throws -> Void = { (_: EmptyWebsocketInit) in }

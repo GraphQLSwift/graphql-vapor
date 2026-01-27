@@ -1,13 +1,13 @@
 # GraphQLVapor
 
-A Swift library for integrating [GraphQL](https://github.com/GraphQLSwift/GraphQL) with [Vapor](https://github.com/vapor/vapor), enabling you to easily expose GraphQL endpoints in your Vapor applications.
+A Swift library for integrating [GraphQL](https://github.com/GraphQLSwift/GraphQL) with [Vapor](https://github.com/vapor/vapor), enabling you to easily expose GraphQL APIs in your Vapor applications.
 
 ## Features
 
 - Simple integration of GraphQL schemas with Vapor routing
-- Support for both GET and POST requests
-- Generic context value support for passing request-specific data to resolvers
-- Automatic encoding/decoding of GraphQL requests and responses
+- Compatibility with the [GraphQL over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md)
+- Subscription support using WebSockets, with support for [`graphql-transport-ws`](https://github.com/GraphQLSwift/GraphQLTransportWS) and [`graphql-ws`](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md) subprotocols
+- Built-in [GraphiQL](https://github.com/graphql/graphiql) IDE
 
 ## Installation
 
@@ -54,18 +54,16 @@ let schema = try GraphQLSchema(
     )
 )
 
-// Create a GraphQL handler
-let graphQLHandler = GraphQLHandler(schema: schema)
+// Define your Context
+struct GraphQLContext: Sendable {}
 
-// Configure routes
-func routes(_ app: Application) throws {
-    app.graphql { _ in
-        return GraphQLContext()
-    }
+// Register GraphQL to the Vapor Application
+app.graphql(schema: schema) { _ in
+    return GraphQLContext()
 }
 ```
 
-Now you can query your GraphQL endpoint:
+Now just run the application! You can view the GraphiQL IDE at `/graphql`, or query directly using `GET` or `POST`:
 
 ```bash
 curl -X POST http://localhost:8080/graphql \
@@ -81,3 +79,8 @@ Response:
   }
 }
 ```
+
+See the `RouteBuilder.graphql` function documentation for advanced configuration options.
+
+To build a type-safe GraphQL schema, consider [`graphql-generator`](https://github.com/GraphQLSwift/graphql-generator) or
+[`Graphiti`](https://github.com/GraphQLSwift/Graphiti)
