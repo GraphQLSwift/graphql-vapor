@@ -31,11 +31,11 @@ struct HelloWorld {
                         resolve: { eventResult, _, _, _ in
                             eventResult
                         },
-                        subscribe: { _, _, anyContext, _ in
+                        subscribe: { _, _, _, _ in
                             let clock = ContinuousClock()
                             let start = clock.now
                             return AsyncTimerSequence(interval: .seconds(3), clock: ContinuousClock()).map { instant in
-                                return "World at \(start.duration(to: instant))"
+                                "World at \(start.duration(to: instant))"
                             }
                         }
                     ),
@@ -56,5 +56,5 @@ struct HelloWorld {
         try await app.asyncShutdown()
     }
 
-    struct GraphQLContext: @unchecked Sendable { }
+    struct GraphQLContext: @unchecked Sendable {}
 }
