@@ -19,7 +19,7 @@ struct GraphQLHandler<
         self.computeContext = computeContext
     }
 
-    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
+    /// https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
     func handleGet(request: Request) async throws -> Response {
         let graphQLRequest = try request.query.decode(GraphQLRequest.self)
         let operationType: OperationType
@@ -41,7 +41,7 @@ struct GraphQLHandler<
         return try encodeResponse(result: result, headers: request.headers)
     }
 
-    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#post
+    /// https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#post
     func handlePost(request: Request) async throws -> Response {
         guard request.headers.contentType != nil else {
             throw Abort(.unsupportedMediaType, reason: "Missing `Content-Type` header")
@@ -82,7 +82,7 @@ struct GraphQLHandler<
         return result
     }
 
-    // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
+    /// https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#body
     private func encodeResponse(result: GraphQLResult, headers: HTTPHeaders) throws -> Response {
         if !config.allowMissingAcceptHeader, headers.accept.isEmpty {
             throw Abort(.notAcceptable, reason: "An `Accept` header must be provided")

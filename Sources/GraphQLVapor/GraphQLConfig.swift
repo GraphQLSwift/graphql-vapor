@@ -36,10 +36,14 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
 
     public struct IDE: Sendable, Equatable {
         /// GraphiQL: https://github.com/graphql/graphiql
-        public static var graphiql: Self { .init(type: .graphiql) }
+        public static var graphiql: Self {
+            .init(type: .graphiql)
+        }
 
         /// Do not expose a GraphQL IDE
-        public static var none: Self { .init(type: .none) }
+        public static var none: Self {
+            .init(type: .none)
+        }
 
         let type: IDEType
         enum IDEType {
@@ -50,7 +54,9 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
 
     public struct SubscriptionProtocol: Sendable, Hashable {
         /// Expose GraphQL subscriptions over WebSockets
-        public static var websocket: Self { .init(type: .websocket) }
+        public static var websocket: Self {
+            .init(type: .websocket)
+        }
 
         let type: SubscriptionProtocolType
         enum SubscriptionProtocolType {

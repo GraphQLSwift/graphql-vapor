@@ -2,13 +2,11 @@ import GraphQL
 import Vapor
 
 extension GraphQLJSONEncoder: @retroactive ContentEncoder {
-    public func encode<E>(_ encodable: E, to body: inout NIOCore.ByteBuffer, headers: inout NIOHTTP1.HTTPHeaders) throws where E: Encodable {
+    public func encode<E: Encodable>(_ encodable: E, to body: inout NIOCore.ByteBuffer, headers: inout NIOHTTP1.HTTPHeaders) throws {
         try encode(encodable, to: &body, headers: &headers, userInfo: [:])
     }
 
-    public func encode<E>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders, userInfo: [CodingUserInfoKey: Sendable]) throws
-        where E: Encodable
-    {
+    public func encode<E: Encodable>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders, userInfo: [CodingUserInfoKey: Sendable]) throws {
         headers.contentType = .jsonGraphQL
 
         if !userInfo.isEmpty { // Changing a coder's userInfo is a thread-unsafe mutation, operate on a copy

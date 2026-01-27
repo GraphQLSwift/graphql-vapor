@@ -27,7 +27,7 @@ class WebSocketMessenger: GraphQLTransportWS.Messenger, GraphQLWS.Messenger {
         }
     }
 
-    func send<S>(_ message: S) async throws where S: Collection, S.Element == Character {
+    func send<S: Collection>(_ message: S) async throws where S.Element == Character {
         guard let websocket = websocket else { return }
         try await websocket.send(message)
     }

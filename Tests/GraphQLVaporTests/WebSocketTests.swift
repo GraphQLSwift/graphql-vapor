@@ -47,15 +47,14 @@ struct WebSocketTests {
                         let response = try #require(message.data(using: .utf8))
                         if let _ = try? decoder.decode(GraphQLTransportWS.ConnectionAckResponse.self, from: response) {
                             try await websocket.send(#"""
-                                {
-                                    "type": "subscribe",
-                                    "payload": {
-                                        "query": "subscription { hello }"
-                                    },
-                                    "id": "1"
-                                }
-                                """#
-                            )
+                            {
+                                "type": "subscribe",
+                                "payload": {
+                                    "query": "subscription { hello }"
+                                },
+                                "id": "1"
+                            }
+                            """#)
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
                             await pubsub.emit(event: "World")
@@ -132,15 +131,14 @@ struct WebSocketTests {
                         let response = try #require(message.data(using: .utf8))
                         if let _ = try? decoder.decode(GraphQLWS.ConnectionAckResponse.self, from: response) {
                             try await websocket.send(#"""
-                                {
-                                    "type": "start",
-                                    "payload": {
-                                        "query": "subscription { hello }"
-                                    },
-                                    "id": "1"
-                                }
-                                """#
-                            )
+                            {
+                                "type": "start",
+                                "payload": {
+                                    "query": "subscription { hello }"
+                                },
+                                "id": "1"
+                            }
+                            """#)
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
                             await pubsub.emit(event: "World")
