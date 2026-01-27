@@ -3,7 +3,7 @@ import GraphQLWS
 import WebSocketKit
 
 /// Messenger wrapper for WebSockets
-class WebSocketMessenger: GraphQLTransportWS.Messenger, GraphQLWS.Messenger {
+class WebSocketMessenger: GraphQLTransportWS.Messenger, GraphQLWS.Messenger, @unchecked Sendable {
     private weak var websocket: WebSocket?
     private var onReceive: (String) async throws -> Void = { _ in }
 
