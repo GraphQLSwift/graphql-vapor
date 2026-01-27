@@ -53,6 +53,7 @@ extension GraphQLHandler {
             result = try await graphql(
                 schema: schema,
                 request: graphQLRequest.query,
+                rootValue: rootValue,
                 context: context,
                 variableValues: graphQLRequest.variables,
                 operationName: graphQLRequest.operationName,
