@@ -15,6 +15,7 @@ public extension RoutesBuilder {
     /// - Parameters:
     ///   - path: The route that should respond to GraphQL requests. Both `GET` and `POST` routes are registered.
     ///   - schema: The GraphQL schema that should be used to respond to requests.
+    ///   - rootValue: The `rootValue` GraphQL execution arg. This is the object passed to the root resolvers.
     ///   - config: GraphQL Handler configuration options. See type documentation for details.
     ///   - computeContext: A closure used to compute the GraphQL context from incoming requests. This must be provided.
     func graphql<
@@ -23,6 +24,7 @@ public extension RoutesBuilder {
     >(
         _ path: [PathComponent] = ["graphql"],
         schema: GraphQLSchema,
+        rootValue: any Sendable = (),
         config: GraphQLConfig<WebSocketInit> = GraphQLConfig<EmptyWebsocketInit>(),
         computeContext: @Sendable @escaping (Request) async throws -> Context
     ) {
@@ -30,7 +32,7 @@ public extension RoutesBuilder {
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#request
-        let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, config: config, computeContext: computeContext)
+        let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
         get(path) { request in
             // WebSocket handling
             if

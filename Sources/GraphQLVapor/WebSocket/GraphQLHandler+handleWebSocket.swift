@@ -47,6 +47,7 @@ extension GraphQLHandler {
                             try await graphql(
                                 schema: schema,
                                 request: graphQLRequest.query,
+                                rootValue: rootValue,
                                 context: context,
                                 variableValues: graphQLRequest.variables,
                                 operationName: graphQLRequest.operationName
@@ -56,6 +57,7 @@ extension GraphQLHandler {
                             try await graphqlSubscribe(
                                 schema: schema,
                                 request: graphQLRequest.query,
+                                rootValue: rootValue,
                                 context: context,
                                 variableValues: graphQLRequest.variables,
                                 operationName: graphQLRequest.operationName
@@ -71,6 +73,7 @@ extension GraphQLHandler {
                             try await graphql(
                                 schema: schema,
                                 request: graphQLRequest.query,
+                                rootValue: rootValue,
                                 context: context,
                                 variableValues: graphQLRequest.variables,
                                 operationName: graphQLRequest.operationName
@@ -80,6 +83,7 @@ extension GraphQLHandler {
                             try await graphqlSubscribe(
                                 schema: schema,
                                 request: graphQLRequest.query,
+                                rootValue: rootValue,
                                 context: context,
                                 variableValues: graphQLRequest.variables,
                                 operationName: graphQLRequest.operationName
