@@ -223,7 +223,7 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Btest%7D", headers: defaultHeaders) { _ in
+            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: defaultHeaders) { _ in
             } afterResponse: { response in
                 #expect(response.status == .methodNotAllowed)
             }
