@@ -8,25 +8,7 @@ extension GraphQLHandler {
     func handleWebSocket(
         request: Request
     ) async throws -> Response {
-        var subProtocol: WebSocketSubProtocol?
-        let requestedSubProtocols = request.headers["Sec-WebSocket-Protocol"]
-        if requestedSubProtocols.isEmpty {
-            // Default
-            subProtocol = .graphqlTransportWs
-        } else {
-            // Choose highest client preference that we understand
-            for requestedSubProtocol in requestedSubProtocols {
-                if let selectedSubProtocol = WebSocketSubProtocol(rawValue: requestedSubProtocol) {
-                    subProtocol = selectedSubProtocol
-                    break
-                }
-            }
-        }
-        guard let subProtocol = subProtocol else {
-            // If they provided options but none matched, fail
-            throw Abort(.badRequest, reason: "Unable to negotiate subprotocol. \(WebSocketSubProtocol.allCases) are supported.")
-        }
-
+        let subProtocol = try negotiateSubProtocol(request: request)
         let context = try await computeContext(request)
         let response = Response(status: .switchingProtocols)
         response.upgrader = WebSocketUpgrader(
@@ -95,5 +77,27 @@ extension GraphQLHandler {
             }
         )
         return response
+    }
+
+    func negotiateSubProtocol(request: Request) throws -> WebSocketSubProtocol {
+        var subProtocol: WebSocketSubProtocol?
+        let requestedSubProtocols = request.headers["Sec-WebSocket-Protocol"]
+        if requestedSubProtocols.isEmpty {
+            // Default
+            subProtocol = .graphqlTransportWs
+        } else {
+            // Choose highest client preference that we understand
+            for requestedSubProtocol in requestedSubProtocols {
+                if let selectedSubProtocol = WebSocketSubProtocol(rawValue: requestedSubProtocol) {
+                    subProtocol = selectedSubProtocol
+                    break
+                }
+            }
+        }
+        guard let subProtocol = subProtocol else {
+            // If they provided options but none matched, fail
+            throw Abort(.badRequest, reason: "Unable to negotiate subprotocol. \(WebSocketSubProtocol.allCases) are supported.")
+        }
+        return subProtocol
     }
 }
