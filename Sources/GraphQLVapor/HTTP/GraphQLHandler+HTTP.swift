@@ -16,7 +16,8 @@ extension GraphQLHandler {
             throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
         }
         let graphQLContextComputationInputs = GraphQLContextComputationInputs(
-            vaporRequest: request
+            vaporRequest: request,
+            graphQLRequest: graphQLRequest
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(
@@ -34,7 +35,8 @@ extension GraphQLHandler {
         }
         let graphQLRequest = try request.content.decode(GraphQLRequest.self)
         let graphQLContextComputationInputs = GraphQLContextComputationInputs(
-            vaporRequest: request
+            vaporRequest: request,
+            graphQLRequest: graphQLRequest
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(

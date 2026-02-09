@@ -70,4 +70,5 @@ public extension RoutesBuilder {
 
 public struct GraphQLContextComputationInputs: Sendable {
     public let vaporRequest: Request
+    public let graphQLRequest: GraphQLRequest
 }
