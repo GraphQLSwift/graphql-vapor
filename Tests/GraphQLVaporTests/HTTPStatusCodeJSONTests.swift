@@ -156,7 +156,7 @@ struct HTTPStatusCodeJSONTests {
                 try req.content.encode(GraphQLRequest(query: "{ error }"))
             } afterResponse: { response in
                 #expect(response.status == .ok)
-                #expect(response.headers.contentType == .jsonGraphQL)
+                #expect(response.headers.contentType == .json)
 
                 let response = try response.content.decode(GraphQLResult.self)
                 #expect(!response.errors.isEmpty)
