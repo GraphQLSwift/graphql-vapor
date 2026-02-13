@@ -1,4 +1,5 @@
 import GraphQL
+import Vapor
 
 /// Configuration options for GraphQLVapor
 public struct GraphQLConfig<
@@ -27,7 +28,7 @@ public struct GraphQLConfig<
         subscriptionProtocols: Set<SubscriptionProtocol> = [],
         websocket: WebSocket = .init(
             // Including this strongly-typed argument is required to avoid compiler failures on Swift 6.2.3.
-            onWebSocketInit: { (_: EmptyWebSocketInit) in }
+            onWebSocketInit: { (_: EmptyWebSocketInit, _: Request) in }
         ),
         additionalValidationRules: [@Sendable (ValidationContext) -> Visitor] = []
     ) {
@@ -70,14 +71,14 @@ public struct GraphQLConfig<
     }
 
     public struct WebSocket: Sendable {
-        let onWebSocketInit: @Sendable (WebSocketInit) async throws -> WebSocketInitResult
+        let onWebSocketInit: @Sendable (WebSocketInit, Request) async throws -> WebSocketInitResult
 
         /// GraphQL over WebSocket configuration
         /// - Parameter onWebSocketInit: A custom callback run during `connection_init` resolution that allows
         /// authorization using the `payload` field of the `connection_init` message.
         /// Throw from this closure to indicate that authorization has failed.
         public init(
-            onWebSocketInit: @Sendable @escaping (WebSocketInit) async throws -> WebSocketInitResult = { (_: EmptyWebSocketInit) in }
+            onWebSocketInit: @Sendable @escaping (WebSocketInit, Request) async throws -> WebSocketInitResult = { (_: EmptyWebSocketInit, _: Request) in }
         ) {
             self.onWebSocketInit = onWebSocketInit
         }
