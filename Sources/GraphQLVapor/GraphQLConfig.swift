@@ -1,7 +1,11 @@
 import GraphQL
+import Vapor
 
 /// Configuration options for GraphQLVapor
-public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Sendable {
+public struct GraphQLConfig<
+    WebSocketInit: Equatable & Codable & Sendable,
+    WebSocketInitResult: Sendable
+>: Sendable {
     let allowGet: Bool
     let allowMissingAcceptHeader: Bool
     let ide: IDE
@@ -24,7 +28,7 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
         subscriptionProtocols: Set<SubscriptionProtocol> = [],
         websocket: WebSocket = .init(
             // Including this strongly-typed argument is required to avoid compiler failures on Swift 6.2.3.
-            onWebsocketInit: { (_: EmptyWebsocketInit) in }
+            onWebSocketInit: { (_: EmptyWebSocketInit, _: Request) in }
         ),
         additionalValidationRules: [@Sendable (ValidationContext) -> Visitor] = []
     ) {
@@ -67,16 +71,16 @@ public struct GraphQLConfig<WebSocketInit: Equatable & Codable & Sendable>: Send
     }
 
     public struct WebSocket: Sendable {
-        let onWebsocketInit: @Sendable (WebSocketInit) async throws -> Void
+        let onWebSocketInit: @Sendable (WebSocketInit, Request) async throws -> WebSocketInitResult
 
         /// GraphQL over WebSocket configuration
-        /// - Parameter onWebsocketInit: A custom callback run during `connection_init` resolution that allows
+        /// - Parameter onWebSocketInit: A custom callback run during `connection_init` resolution that allows
         /// authorization using the `payload` field of the `connection_init` message.
         /// Throw from this closure to indicate that authorization has failed.
         public init(
-            onWebsocketInit: @Sendable @escaping (WebSocketInit) async throws -> Void = { (_: EmptyWebsocketInit) in }
+            onWebSocketInit: @Sendable @escaping (WebSocketInit, Request) async throws -> WebSocketInitResult = { (_: EmptyWebSocketInit, _: Request) in }
         ) {
-            self.onWebsocketInit = onWebsocketInit
+            self.onWebSocketInit = onWebSocketInit
         }
     }
 }

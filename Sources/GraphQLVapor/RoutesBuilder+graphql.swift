@@ -20,19 +20,20 @@ public extension RoutesBuilder {
     ///   - computeContext: A closure used to compute the GraphQL context from incoming requests. This must be provided.
     func graphql<
         Context: Sendable,
-        WebSocketInit: Equatable & Codable & Sendable
+        WebSocketInit: Equatable & Codable & Sendable,
+        WebSocketInitResult: Sendable
     >(
         _ path: [PathComponent] = ["graphql"],
         schema: GraphQLSchema,
         rootValue: any Sendable = (),
-        config: GraphQLConfig<WebSocketInit> = GraphQLConfig<EmptyWebsocketInit>(),
-        computeContext: @Sendable @escaping (GraphQLContextComputationInputs) async throws -> Context
+        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<EmptyWebSocketInit, Void>(),
+        computeContext: @Sendable @escaping (GraphQLContextComputationInputs<WebSocketInitResult>) async throws -> Context
     ) {
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#request
-        let handler = GraphQLHandler<Context, WebSocketInit>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
+        let handler = GraphQLHandler<Context, WebSocketInit, WebSocketInitResult>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
         get(path) { request in
             // WebSocket handling
             if
@@ -68,7 +69,17 @@ public extension RoutesBuilder {
     }
 }
 
-public struct GraphQLContextComputationInputs: Sendable {
+/// Request metadata that can be used to construct a GraphQL context
+public struct GraphQLContextComputationInputs<
+    WebSocketInitResult: Sendable
+>: Sendable {
+    /// The Vapor request that initiated the GraphQL request. In WebSockets, this is the upgrade GET request.
     public let vaporRequest: Request
+
+    /// The decoded GraphQL request, including the raw query, variables, and more
     public let graphQLRequest: GraphQLRequest
+
+    /// The result of the WebSocket's initialization closure. This can be used to customize GraphQL context creation based on the init
+    /// message metadata as opposed to only the upgrade request. In non-WebSocket contexts, this is nil.
+    public let websocketInitResult: WebSocketInitResult?
 }
