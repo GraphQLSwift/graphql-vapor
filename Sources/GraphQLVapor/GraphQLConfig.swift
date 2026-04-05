@@ -85,7 +85,10 @@ public struct GraphQLConfig<
         /// authorization using the `payload` field of the `connection_init` message.
         /// Throw from this closure to indicate that authorization has failed.
         public init(
-            onWebSocketInit: @Sendable @escaping (WebSocketInit, Request) async throws -> WebSocketInitResult = { (_: EmptyWebSocketInit, _: Request) in }
+            onWebSocketInit:
+                @Sendable @escaping (WebSocketInit, Request) async throws -> WebSocketInitResult = {
+                    (_: EmptyWebSocketInit, _: Request) in
+                }
         ) {
             self.onWebSocketInit = onWebSocketInit
         }

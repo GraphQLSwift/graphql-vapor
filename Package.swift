@@ -5,13 +5,13 @@ import PackageDescription
 let package = Package(
     name: "GraphQLVapor",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v13)
     ],
     products: [
         .library(
             name: "GraphQLVapor",
             targets: ["GraphQLVapor"]
-        ),
+        )
     ],
     dependencies: [
         .package(url: "https://github.com/GraphQLSwift/GraphQL.git", from: "4.0.0"),

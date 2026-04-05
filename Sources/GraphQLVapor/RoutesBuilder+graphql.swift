@@ -1,7 +1,7 @@
 import GraphQL
 import Vapor
 
-public extension RoutesBuilder {
+extension RoutesBuilder {
     /// Registers graphql routes that respond using the provided schema.
     ///
     /// The resulting routes adhere to the [GraphQL over HTTP spec](https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md).
@@ -18,7 +18,7 @@ public extension RoutesBuilder {
     ///   - rootValue: The `rootValue` GraphQL execution arg. This is the object passed to the root resolvers.
     ///   - config: GraphQL Handler configuration options. See type documentation for details.
     ///   - computeContext: A closure used to compute the GraphQL context from incoming requests. This must be provided.
-    func graphql<
+    public func graphql<
         Context: Sendable,
         WebSocketInit: Equatable & Codable & Sendable,
         WebSocketInitResult: Sendable
@@ -26,18 +26,26 @@ public extension RoutesBuilder {
         _ path: [PathComponent] = ["graphql"],
         schema: GraphQLSchema,
         rootValue: any Sendable = (),
-        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<EmptyWebSocketInit, Void>(),
-        computeContext: @Sendable @escaping (GraphQLContextComputationInputs<WebSocketInitResult>) async throws -> Context
+        config: GraphQLConfig<WebSocketInit, WebSocketInitResult> = GraphQLConfig<
+            EmptyWebSocketInit, Void
+        >(),
+        computeContext:
+            @Sendable @escaping (GraphQLContextComputationInputs<WebSocketInitResult>) async throws
+            -> Context
     ) {
         ContentConfiguration.global.use(encoder: GraphQLJSONEncoder(), for: .jsonGraphQL)
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .jsonGraphQL)
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#request
-        let handler = GraphQLHandler<Context, WebSocketInit, WebSocketInitResult>(schema: schema, rootValue: rootValue, config: config, computeContext: computeContext)
+        let handler = GraphQLHandler<Context, WebSocketInit, WebSocketInitResult>(
+            schema: schema,
+            rootValue: rootValue,
+            config: config,
+            computeContext: computeContext
+        )
         get(path) { request in
             // WebSocket handling
-            if
-                config.subscriptionProtocols.contains(.websocket),
+            if config.subscriptionProtocols.contains(.websocket),
                 request.headers.connection?.value.lowercased() == "upgrade"
             {
                 return try await handler.handleWebSocket(request: request)
@@ -49,7 +57,8 @@ public extension RoutesBuilder {
                 case .graphiql:
                     return try await GraphiQLHandler.respond(
                         url: request.url.string,
-                        subscriptionUrl: config.subscriptionProtocols.contains(.websocket) ? request.url.string : nil
+                        subscriptionUrl: config.subscriptionProtocols.contains(.websocket)
+                            ? request.url.string : nil
                     )
                 case .none:
                     // Let this get caught by the graphQLRequest decoding

@@ -73,7 +73,10 @@ extension GraphQLHandler {
             // This indicates a request parsing error
             return GraphQLResult(data: nil, errors: [error])
         } catch {
-            return GraphQLResult(data: nil, errors: [GraphQLError(message: error.localizedDescription)])
+            return GraphQLResult(
+                data: nil,
+                errors: [GraphQLError(message: error.localizedDescription)]
+            )
         }
         return result
     }
