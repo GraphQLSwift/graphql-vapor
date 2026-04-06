@@ -1,9 +1,10 @@
 import GraphQL
 import GraphQLTransportWS
-@testable import GraphQLVapor
 import GraphQLWS
 import Testing
 import VaporTesting
+
+@testable import GraphQLVapor
 
 @Suite
 struct HTTPTests {
@@ -35,7 +36,7 @@ struct HTTPTests {
                         "greet": GraphQLField(
                             type: GraphQLString,
                             args: [
-                                "name": GraphQLArgument(type: GraphQLString),
+                                "name": GraphQLArgument(type: GraphQLString)
                             ],
                             resolve: { _, args, _, _ in
                                 guard let name = args["name"].string else {
@@ -43,7 +44,7 @@ struct HTTPTests {
                                 }
                                 return "Hello, \(name)"
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -88,7 +89,7 @@ struct HTTPTests {
                                 }
                                 return ctx.message
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -145,7 +146,8 @@ struct HTTPTests {
 
     @Test func defaultAcceptHeader() async throws {
         try await withApp { app in
-            app.graphql(schema: helloWorldSchema, config: .init(allowMissingAcceptHeader: true)) { _ in
+            app.graphql(schema: helloWorldSchema, config: .init(allowMissingAcceptHeader: true)) {
+                _ in
                 EmptyContext()
             }
 
@@ -168,7 +170,8 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) { _ in
+            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) {
+                _ in
             } afterResponse: { response in
                 #expect(response.status == .ok)
 
@@ -190,7 +193,8 @@ struct HTTPTests {
                 EmptyContext()
             }
 
-            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) { _ in
+            try await app.test(.GET, "/graphql?query=%7Bhello%7D", headers: jsonGraphQLHeaders) {
+                _ in
             } afterResponse: { response in
                 #expect(response.status == .methodNotAllowed)
             }
@@ -205,20 +209,29 @@ struct HTTPTests {
 
             try await app.test(.GET, "/graphql") { response in
                 #expect(response.status == .ok)
-                #expect(response.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: nil))
+                #expect(
+                    response.body.string
+                        == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: nil)
+                )
             }
         }
     }
 
     @Test func graphiqlSubscription() async throws {
         try await withApp { app in
-            app.graphql(schema: helloWorldSchema, config: .init(subscriptionProtocols: [.websocket])) { _ in
+            app.graphql(
+                schema: helloWorldSchema,
+                config: .init(subscriptionProtocols: [.websocket])
+            ) { _ in
                 EmptyContext()
             }
 
             try await app.test(.GET, "/graphql") { response in
                 #expect(response.status == .ok)
-                #expect(response.body.string == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: "/graphql"))
+                #expect(
+                    response.body.string
+                        == GraphiQLHandler.html(url: "/graphql", subscriptionUrl: "/graphql")
+                )
             }
         }
     }

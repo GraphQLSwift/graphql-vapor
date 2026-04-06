@@ -19,7 +19,7 @@ struct HelloWorld {
                         resolve: { _, _, _, _ in
                             "World"
                         }
-                    ),
+                    )
                 ]
             ),
             subscription: GraphQLObjectType(
@@ -34,11 +34,14 @@ struct HelloWorld {
                         subscribe: { _, _, _, _ in
                             let clock = ContinuousClock()
                             let start = clock.now
-                            return AsyncTimerSequence(interval: .seconds(3), clock: ContinuousClock()).map { instant in
+                            return AsyncTimerSequence(
+                                interval: .seconds(3),
+                                clock: ContinuousClock()
+                            ).map { instant in
                                 "World at \(start.duration(to: instant))"
                             }
                         }
-                    ),
+                    )
                 ]
             )
         )

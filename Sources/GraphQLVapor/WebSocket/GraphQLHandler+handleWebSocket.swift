@@ -1,8 +1,9 @@
 import GraphQL
+import Vapor
+
 import struct GraphQLTransportWS.EmptyInitPayload
 import class GraphQLTransportWS.Server
 import class GraphQLWS.Server
-import Vapor
 
 extension GraphQLHandler {
     func handleWebSocket(
@@ -11,7 +12,10 @@ extension GraphQLHandler {
         let subProtocol = try negotiateSubProtocol(request: request)
         let response = Response(status: .switchingProtocols)
         response.upgrader = WebSocketUpgrader(
-            maxFrameSize: .init(integerLiteral: (config.maxBodySize ?? request.application.routes.defaultMaxBodySize).value),
+            maxFrameSize: .init(
+                integerLiteral: (config.maxBodySize ?? request.application.routes.defaultMaxBodySize)
+                    .value
+            ),
             shouldUpgrade: {
                 request.eventLoop.makeFutureWithTask {
                     ["Sec-WebSocket-Protocol": subProtocol.rawValue]
@@ -26,7 +30,7 @@ extension GraphQLHandler {
                         switch result {
                         case .success:
                             continuation.finish()
-                        case let .failure(error):
+                        case .failure(let error):
                             continuation.finish(throwing: error)
                         }
                     }
@@ -36,7 +40,10 @@ extension GraphQLHandler {
                 switch subProtocol {
                 case .graphqlTransportWs:
                     // https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md
-                    let server = GraphQLTransportWS.Server<WebSocketInit, WebSocketInitResult, AsyncThrowingStream<GraphQLResult, Error>>(
+                    let server = GraphQLTransportWS.Server<
+                        WebSocketInit, WebSocketInitResult,
+                        AsyncThrowingStream<GraphQLResult, Error>
+                    >(
                         messenger: messenger,
                         onInit: { initPayload in
                             try await config.websocket.onWebSocketInit(initPayload, request)
@@ -80,7 +87,10 @@ extension GraphQLHandler {
                     }
                 case .graphqlWs:
                     // https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md
-                    let server = GraphQLWS.Server<WebSocketInit, WebSocketInitResult, AsyncThrowingStream<GraphQLResult, Error>>(
+                    let server = GraphQLWS.Server<
+                        WebSocketInit, WebSocketInitResult,
+                        AsyncThrowingStream<GraphQLResult, Error>
+                    >(
                         messenger: messenger,
                         onInit: { initPayload in
                             try await config.websocket.onWebSocketInit(initPayload, request)
@@ -145,7 +155,11 @@ extension GraphQLHandler {
         }
         guard let subProtocol = subProtocol else {
             // If they provided options but none matched, fail
-            throw Abort(.badRequest, reason: "Unable to negotiate subprotocol. \(WebSocketSubProtocol.allCases) are supported.")
+            throw Abort(
+                .badRequest,
+                reason:
+                    "Unable to negotiate subprotocol. \(WebSocketSubProtocol.allCases) are supported."
+            )
         }
         return subProtocol
     }

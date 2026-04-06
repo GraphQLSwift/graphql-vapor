@@ -20,7 +20,7 @@ let helloWorldSchema = try! GraphQLSchema(
                 resolve: { _, _, _, _ in
                     "World"
                 }
-            ),
+            )
         ]
     )
 )

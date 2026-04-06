@@ -1,9 +1,10 @@
 import GraphQL
 import GraphQLTransportWS
-@testable import GraphQLVapor
 import GraphQLWS
 import Testing
 import VaporTesting
+
+@testable import GraphQLVapor
 
 @Suite
 struct WebSocketTests {
@@ -22,7 +23,7 @@ struct WebSocketTests {
                             subscribe: { _, _, _, _ in
                                 await pubsub.subscribe()
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -45,26 +46,40 @@ struct WebSocketTests {
                     do {
                         #expect(!message.starts(with: "44"))
                         let response = try #require(message.data(using: .utf8))
-                        if let _ = try? decoder.decode(GraphQLTransportWS.ConnectionAckResponse.self, from: response) {
-                            try await websocket.send(#"""
-                            {
-                                "type": "subscribe",
-                                "payload": {
-                                    "query": "subscription { hello }"
-                                },
-                                "id": "1"
-                            }
-                            """#)
+                        if (try? decoder.decode(
+                            GraphQLTransportWS.ConnectionAckResponse.self,
+                            from: response
+                        )) != nil {
+                            try await websocket.send(
+                                #"""
+                                {
+                                    "type": "subscribe",
+                                    "payload": {
+                                        "query": "subscription { hello }"
+                                    },
+                                    "id": "1"
+                                }
+                                """#
+                            )
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
                             await pubsub.emit(event: "World")
-                        } else if let next = try? decoder.decode(GraphQLTransportWS.NextResponse.self, from: response) {
+                        } else if let next = try? decoder.decode(
+                            GraphQLTransportWS.NextResponse.self,
+                            from: response
+                        ) {
                             #expect(next.payload?.errors == [])
                             #expect(next.payload?.data == ["hello": "World"])
                             await pubsub.cancel()
-                        } else if let _ = try? decoder.decode(GraphQLTransportWS.CompleteResponse.self, from: response) {
+                        } else if (try? decoder.decode(
+                            GraphQLTransportWS.CompleteResponse.self,
+                            from: response
+                        )) != nil {
                             try await websocket.close()
-                        } else if let _ = try? decoder.decode(GraphQLTransportWS.ErrorResponse.self, from: response) {
+                        } else if (try? decoder.decode(
+                            GraphQLTransportWS.ErrorResponse.self,
+                            from: response
+                        )) != nil {
                             Issue.record("Error message: \(message)")
                             await pubsub.cancel()
                             try await websocket.close()
@@ -103,7 +118,7 @@ struct WebSocketTests {
                             subscribe: { _, _, _, _ in
                                 await pubsub.subscribe()
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -145,26 +160,40 @@ struct WebSocketTests {
                     do {
                         #expect(!message.starts(with: "44"))
                         let response = try #require(message.data(using: .utf8))
-                        if let _ = try? decoder.decode(GraphQLTransportWS.ConnectionAckResponse.self, from: response) {
-                            try await websocket.send(#"""
-                            {
-                                "type": "subscribe",
-                                "payload": {
-                                    "query": "subscription { hello }"
-                                },
-                                "id": "1"
-                            }
-                            """#)
+                        if (try? decoder.decode(
+                            GraphQLTransportWS.ConnectionAckResponse.self,
+                            from: response
+                        )) != nil {
+                            try await websocket.send(
+                                #"""
+                                {
+                                    "type": "subscribe",
+                                    "payload": {
+                                        "query": "subscription { hello }"
+                                    },
+                                    "id": "1"
+                                }
+                                """#
+                            )
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
                             await pubsub.emit(event: "World")
-                        } else if let _ = try? decoder.decode(GraphQLTransportWS.NextResponse.self, from: response) {
+                        } else if (try? decoder.decode(
+                            GraphQLTransportWS.NextResponse.self,
+                            from: response
+                        )) != nil {
                             Issue.record("Expected Error: \(message)")
                             await pubsub.cancel()
-                        } else if let _ = try? decoder.decode(GraphQLTransportWS.CompleteResponse.self, from: response) {
+                        } else if (try? decoder.decode(
+                            GraphQLTransportWS.CompleteResponse.self,
+                            from: response
+                        )) != nil {
                             Issue.record("Expected Error: \(message)")
                             try await websocket.close()
-                        } else if let errorResult = try? decoder.decode(GraphQLTransportWS.ErrorResponse.self, from: response) {
+                        } else if let errorResult = try? decoder.decode(
+                            GraphQLTransportWS.ErrorResponse.self,
+                            from: response
+                        ) {
                             #expect(errorResult.payload[0].message == "Unauthorized")
                             await pubsub.cancel()
                             try await websocket.close()
@@ -179,7 +208,9 @@ struct WebSocketTests {
                 }
                 do {
                     // Send incorrect code, expect an "Unauthorized" error on the subscribe call
-                    try await websocket.send(#"{"type": "connection_init", "payload": {"code": "def"}}"#)
+                    try await websocket.send(
+                        #"{"type": "connection_init", "payload": {"code": "def"}}"#
+                    )
                     try await websocket.onClose.get()
                 } catch {
                     Issue.record("WebSocket error: \(error)")
@@ -204,7 +235,7 @@ struct WebSocketTests {
                             subscribe: { _, _, _, _ in
                                 await pubsub.subscribe()
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -230,26 +261,39 @@ struct WebSocketTests {
                     do {
                         #expect(!message.starts(with: "44"))
                         let response = try #require(message.data(using: .utf8))
-                        if let _ = try? decoder.decode(GraphQLWS.ConnectionAckResponse.self, from: response) {
-                            try await websocket.send(#"""
-                            {
-                                "type": "start",
-                                "payload": {
-                                    "query": "subscription { hello }"
-                                },
-                                "id": "1"
-                            }
-                            """#)
+                        if (try? decoder.decode(
+                            GraphQLWS.ConnectionAckResponse.self,
+                            from: response
+                        )) != nil {
+                            try await websocket.send(
+                                #"""
+                                {
+                                    "type": "start",
+                                    "payload": {
+                                        "query": "subscription { hello }"
+                                    },
+                                    "id": "1"
+                                }
+                                """#
+                            )
                             // Must wait for a few milliseconds for the subscription to get set up.
                             try await Task.sleep(for: .milliseconds(10))
                             await pubsub.emit(event: "World")
-                        } else if let next = try? decoder.decode(GraphQLWS.DataResponse.self, from: response) {
+                        } else if let next = try? decoder.decode(
+                            GraphQLWS.DataResponse.self,
+                            from: response
+                        ) {
                             #expect(next.payload?.errors == [])
                             #expect(next.payload?.data == ["hello": "World"])
                             await pubsub.cancel()
-                        } else if let _ = try? decoder.decode(GraphQLWS.CompleteResponse.self, from: response) {
+                        } else if (try? decoder.decode(
+                            GraphQLWS.CompleteResponse.self,
+                            from: response
+                        )) != nil {
                             try await websocket.close()
-                        } else if let _ = try? decoder.decode(GraphQLWS.ErrorResponse.self, from: response) {
+                        } else if (try? decoder.decode(GraphQLWS.ErrorResponse.self, from: response))
+                            != nil
+                        {
                             Issue.record("Error message: \(message)")
                             await pubsub.cancel()
                             try await websocket.close()

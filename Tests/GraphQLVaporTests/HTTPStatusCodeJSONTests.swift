@@ -1,12 +1,13 @@
 import Foundation
 import GraphQL
 import GraphQLTransportWS
-@testable import GraphQLVapor
 import GraphQLWS
 import NIOFoundationCompat
 import Testing
 import Vapor
 import VaporTesting
+
+@testable import GraphQLVapor
 
 /// Validates status code behavior for the `application/json` media type.
 ///
@@ -51,9 +52,11 @@ struct HTTPStatusCodeJSONTests {
             }
 
             try await app.test(.POST, "/graphql", headers: jsonHeaders) { req in
-                try req.content.encode(GraphQLRequest(
-                    query: "{"
-                ))
+                try req.content.encode(
+                    GraphQLRequest(
+                        query: "{"
+                    )
+                )
             } afterResponse: { response in
                 #expect(response.status == .ok)
             }
@@ -69,9 +72,11 @@ struct HTTPStatusCodeJSONTests {
 
             try await app.test(.POST, "/graphql", headers: jsonHeaders) { req in
                 // Fails "No Unused Variables" validation rule
-                try req.content.encode(GraphQLRequest(
-                    query: "query A($name: String) { hello }"
-                ))
+                try req.content.encode(
+                    GraphQLRequest(
+                        query: "query A($name: String) { hello }"
+                    )
+                )
             } afterResponse: { response in
                 #expect(response.status == .ok)
             }
@@ -88,7 +93,7 @@ struct HTTPStatusCodeJSONTests {
                         "get": GraphQLField(
                             type: GraphQLString,
                             args: [
-                                "name": GraphQLArgument(type: GraphQLString),
+                                "name": GraphQLArgument(type: GraphQLString)
                             ],
                             resolve: { _, args, _, _ in
                                 guard let name = args["name"].string else {
@@ -96,7 +101,7 @@ struct HTTPStatusCodeJSONTests {
                                 }
                                 return name
                             }
-                        ),
+                        )
                     ]
                 )
             )
@@ -105,10 +110,12 @@ struct HTTPStatusCodeJSONTests {
             }
 
             try await app.test(.POST, "/graphql", headers: jsonHeaders) { req in
-                try req.content.encode(GraphQLRequest(
-                    query: "query getName($name: String!) { get(name: $name) }",
-                    variables: ["name": .null]
-                ))
+                try req.content.encode(
+                    GraphQLRequest(
+                        query: "query getName($name: String!) { get(name: $name) }",
+                        variables: ["name": .null]
+                    )
+                )
             } afterResponse: { response in
                 #expect(response.status == .ok)
             }
@@ -123,9 +130,11 @@ struct HTTPStatusCodeJSONTests {
             }
 
             try await app.test(.POST, "/graphql", headers: jsonHeaders) { req in
-                try req.content.encode(GraphQLRequest(
-                    query: "abc { hello }"
-                ))
+                try req.content.encode(
+                    GraphQLRequest(
+                        query: "abc { hello }"
+                    )
+                )
             } afterResponse: { response in
                 #expect(response.status == .ok)
             }
@@ -144,7 +153,7 @@ struct HTTPStatusCodeJSONTests {
                             resolve: { _, _, _, _ in
                                 throw GraphQLError(message: "Something went wrong")
                             }
-                        ),
+                        )
                     ]
                 )
             )

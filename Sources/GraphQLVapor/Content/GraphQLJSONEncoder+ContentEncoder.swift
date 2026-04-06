@@ -2,21 +2,30 @@ import GraphQL
 import Vapor
 
 extension GraphQLJSONEncoder: @retroactive ContentEncoder {
-    public func encode<E: Encodable>(_ encodable: E, to body: inout NIOCore.ByteBuffer, headers: inout NIOHTTP1.HTTPHeaders) throws {
+    public func encode<E: Encodable>(
+        _ encodable: E,
+        to body: inout NIOCore.ByteBuffer,
+        headers: inout NIOHTTP1.HTTPHeaders
+    ) throws {
         try encode(encodable, to: &body, headers: &headers, userInfo: [:])
     }
 
-    public func encode<E: Encodable>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders, userInfo: [CodingUserInfoKey: Sendable]) throws {
+    public func encode<E: Encodable>(
+        _ encodable: E,
+        to body: inout ByteBuffer,
+        headers: inout HTTPHeaders,
+        userInfo: [CodingUserInfoKey: Sendable]
+    ) throws {
         headers.contentType = .jsonGraphQL
 
-        if !userInfo.isEmpty { // Changing a coder's userInfo is a thread-unsafe mutation, operate on a copy
+        if !userInfo.isEmpty {  // Changing a coder's userInfo is a thread-unsafe mutation, operate on a copy
             let encoder = GraphQLJSONEncoder.custom(
                 dates: dateEncodingStrategy,
                 data: dataEncodingStrategy,
                 keys: keyEncodingStrategy,
                 format: outputFormatting,
                 floats: nonConformingFloatEncodingStrategy
-            ) // don't use userInfo parameter of `JSONEncoder.custom()` until Swift 6.2 is required
+            )  // don't use userInfo parameter of `JSONEncoder.custom()` until Swift 6.2 is required
             encoder.userInfo = self.userInfo.merging(userInfo) { $1 }
             try body.writeBytes(encoder.encode(encodable))
         } else {
@@ -25,7 +34,7 @@ extension GraphQLJSONEncoder: @retroactive ContentEncoder {
     }
 }
 
-public extension GraphQLJSONEncoder {
+extension GraphQLJSONEncoder {
     /// Convenience for creating a customized ``Foundation/GraphQLJSONEncoder``.
     ///
     ///     let encoder: GraphQLJSONEncoder = .custom(dates: .millisecondsSince1970)
@@ -38,7 +47,7 @@ public extension GraphQLJSONEncoder {
     ///   - floats: Non-conforming float encoding strategy.
     ///   - userInfo: Coder userInfo.
     /// - Returns: Newly created ``Foundation/JSONEncoder``.
-    static func custom(
+    public static func custom(
         dates dateStrategy: GraphQLJSONEncoder.DateEncodingStrategy? = nil,
         data dataStrategy: GraphQLJSONEncoder.DataEncodingStrategy? = nil,
         keys keyStrategy: GraphQLJSONEncoder.KeyEncodingStrategy? = nil,

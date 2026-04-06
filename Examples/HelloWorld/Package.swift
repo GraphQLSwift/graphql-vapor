@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "HelloWorld",
     platforms: [
-        .macOS(.v13),
+        .macOS(.v13)
     ],
     dependencies: [
         .package(name: "graphql-vapor", path: "../../"),
@@ -22,6 +22,6 @@ let package = Package(
                 .product(name: "GraphQL", package: "GraphQL"),
                 .product(name: "Vapor", package: "vapor"),
             ]
-        ),
+        )
     ]
 )
