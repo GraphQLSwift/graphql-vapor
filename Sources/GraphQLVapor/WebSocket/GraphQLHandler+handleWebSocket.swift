@@ -22,9 +22,13 @@ extension GraphQLHandler {
                 }
             },
             onUpgrade: { websocket in
-                let messageStream = AsyncThrowingStream<String, Error> { continuation in
+                let messageStream = AsyncThrowingStream<Data, Error> { continuation in
+                    // By subprotocol specs, messages must be `text` and UTF8
                     websocket.onText { _, text in
-                        continuation.yield(text)
+                        guard let data = text.data(using: .utf8) else {
+                            return
+                        }
+                        continuation.yield(data)
                     }
                     websocket.onClose.whenComplete { result in
                         switch result {
