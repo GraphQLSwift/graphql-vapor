@@ -5,9 +5,14 @@ extension GraphQLHandler {
     /// https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#get
     func handleGet(request: Request) async throws -> Response {
         let graphQLRequest = try request.query.decode(GraphQLRequest.self)
+
+        let documentAST: Document
         let operationType: OperationType
         do {
-            operationType = try graphQLRequest.operationType()
+            documentAST = try parse(
+                source: Source(body: graphQLRequest.query, name: graphQLRequest.operationName ?? "")
+            )
+            operationType = try Self.operationTypeOf(document: documentAST, named: graphQLRequest.operationName)
         } catch {
             // Indicates a request parsing error
             throw Abort(.badRequest, reason: error.localizedDescription)
@@ -15,6 +20,7 @@ extension GraphQLHandler {
         guard operationType != .mutation else {
             throw Abort(.methodNotAllowed, reason: "Mutations using GET are disallowed")
         }
+
         let graphQLContextComputationInputs = GraphQLContextComputationInputs<WebSocketInitResult>(
             vaporRequest: request,
             graphQLRequest: graphQLRequest,
@@ -22,7 +28,9 @@ extension GraphQLHandler {
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(
-            graphQLRequest: graphQLRequest,
+            documentAST: documentAST,
+            operationName: graphQLRequest.operationName,
+            variables: graphQLRequest.variables,
             context: context,
             additionalValidationRules: config.additionalValidationRules
         )
@@ -35,6 +43,18 @@ extension GraphQLHandler {
             throw Abort(.unsupportedMediaType, reason: "Missing `Content-Type` header")
         }
         let graphQLRequest = try request.content.decode(GraphQLRequest.self)
+
+        let documentAST: Document
+        do {
+            documentAST = try parse(
+                source: Source(body: graphQLRequest.query, name: graphQLRequest.operationName ?? "")
+            )
+        } catch let error as GraphQLError {
+            // Indicates a request parsing error
+            let result = GraphQLResult(data: nil, errors: [error])
+            return try encodeResponse(result: result, headers: request.headers)
+        }
+
         let graphQLContextComputationInputs = GraphQLContextComputationInputs<WebSocketInitResult>(
             vaporRequest: request,
             graphQLRequest: graphQLRequest,
@@ -42,7 +62,9 @@ extension GraphQLHandler {
         )
         let context = try await computeContext(graphQLContextComputationInputs)
         let result = await execute(
-            graphQLRequest: graphQLRequest,
+            documentAST: documentAST,
+            operationName: graphQLRequest.operationName,
+            variables: graphQLRequest.variables,
             context: context,
             additionalValidationRules: config.additionalValidationRules
         )
@@ -50,28 +72,46 @@ extension GraphQLHandler {
     }
 
     private func execute(
-        graphQLRequest: GraphQLRequest,
+        documentAST: Document,
+        operationName: String?,
+        variables: [String: Map],
         context: Context,
         additionalValidationRules: [@Sendable (ValidationContext) -> Visitor]
     ) async -> GraphQLResult {
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#validation
+
+        // Validate schema
+        do {
+            let schemaValidationErrors = try validateSchema(schema: schema)
+            guard schemaValidationErrors.isEmpty else {
+                return GraphQLResult(errors: schemaValidationErrors)
+            }
+        } catch {
+            return GraphQLResult(errors: [GraphQLError(error)])
+        }
+
         let validationRules = GraphQL.specifiedRules + additionalValidationRules
+        // Validate request
+        let validationErrors = validate(
+            schema: schema,
+            ast: documentAST,
+            rules: validationRules
+        )
+        guard validationErrors.isEmpty else {
+            return GraphQLResult(errors: validationErrors)
+        }
 
         // https://github.com/graphql/graphql-over-http/blob/main/spec/GraphQLOverHTTP.md#execution
         let result: GraphQLResult
         do {
-            result = try await graphql(
+            result = try await GraphQL.execute(
                 schema: schema,
-                request: graphQLRequest.query,
+                documentAST: documentAST,
                 rootValue: rootValue,
                 context: context,
-                variableValues: graphQLRequest.variables,
-                operationName: graphQLRequest.operationName,
-                validationRules: validationRules
+                variableValues: variables,
+                operationName: operationName
             )
-        } catch let error as GraphQLError {
-            // This indicates a request parsing error
-            return GraphQLResult(data: nil, errors: [error])
         } catch {
             return GraphQLResult(
                 data: nil,
@@ -121,5 +161,24 @@ extension GraphQLHandler {
 
         try response.content.encode(result, as: selectedMediaType)
         return response
+    }
+
+    private static func operationTypeOf(document: Document, named operationName: String? = nil) throws -> OperationType {
+        let operationDefinitions = document.definitions.filter { operation in
+            operation.kind == .operationDefinition
+        }.compactMap { operation in
+            operation as? OperationDefinition
+        }
+
+        // We don't have to validate the document and check for multiple/missing operations here
+        // That will be done upon execution.
+        let operationMatch = operationDefinitions.first { operation in
+            if let operationName {
+                return operationName == operation.name?.value
+            } else {
+                return true
+            }
+        }
+        return operationMatch?.operation ?? .query
     }
 }
