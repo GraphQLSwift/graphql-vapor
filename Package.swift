@@ -14,7 +14,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/GraphQLSwift/GraphQL.git", from: "4.0.0"),
+        .package(url: "https://github.com/GraphQLSwift/GraphQL.git", from: "4.2.0"),
         .package(url: "https://github.com/GraphQLSwift/GraphQLTransportWS.git", from: "2.0.0"),
         .package(url: "https://github.com/GraphQLSwift/GraphQLWS.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/vapor.git", from: "4.0.0"),
