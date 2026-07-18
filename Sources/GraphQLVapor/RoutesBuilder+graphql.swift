@@ -52,7 +52,7 @@ extension RoutesBuilder {
             }
 
             // Get requests without a `query` parameter are considered to be IDE requests
-            if request.url.query == nil || !(request.url.query?.contains("query") ?? true) {
+            if request.query[String.self, at: "query"] == nil {
                 switch config.ide.type {
                 case .graphiql:
                     return try await GraphiQLHandler.respond(
