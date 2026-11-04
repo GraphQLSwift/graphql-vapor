@@ -8,6 +8,33 @@ import VaporTesting
 
 @Suite
 struct WebSocketTests {
+    @Test(arguments: [
+        "Upgrade",
+        "upgrade",
+        "keep-alive, Upgrade",
+    ])
+    func upgradeDetection(connection: String) async throws {
+        try await withApp { app in
+            let schema = try GraphQLSchema(
+                query: GraphQLObjectType(name: "Query", fields: ["hello": GraphQLField(type: GraphQLString)])
+            )
+            app.graphql(schema: schema, config: .init(subscriptionProtocols: [.websocket])) { _ in
+                EmptyContext()
+            }
+            try await app.testing().test(
+                .GET,
+                "/graphql",
+                headers: [
+                    "Connection": connection,
+                    "Upgrade": "websocket",
+                    "Sec-WebSocket-Protocol": "graphql-transport-ws",
+                ]
+            ) { response in
+                #expect(response.status == .switchingProtocols)
+            }
+        }
+    }
+
     @Test func subscription() async throws {
         try await withApp { app in
             let pubsub = SimplePubSub<String>()

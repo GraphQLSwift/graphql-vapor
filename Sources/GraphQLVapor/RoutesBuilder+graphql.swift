@@ -46,7 +46,9 @@ extension RoutesBuilder {
         get(path) { request in
             // WebSocket handling
             if config.subscriptionProtocols.contains(.websocket),
-                request.headers.connection?.value.lowercased() == "upgrade"
+                // Check for RFC 6455 WebSocket headers
+                request.headers[canonicalForm: "upgrade"].map({ $0.lowercased() }).contains("websocket"),
+                request.headers[canonicalForm: "connection"].map({ $0.lowercased() }).contains("upgrade")
             {
                 return try await handler.handleWebSocket(request: request)
             }
